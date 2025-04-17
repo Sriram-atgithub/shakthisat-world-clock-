@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShakthiSAT - World Clock</title>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --background-color: #f8f9fa;
+            --card-background: #ffffff;
+            --text-color: #333;
+            --border-color: #e0e0e0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .search-container {
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        #search {
+            padding: 10px 15px;
+            width: 80%;
+            max-width: 400px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .view-toggle {
+            display: flex;
+            gap: 10px;
+        }
+
+        .view-btn {
+            padding: 8px 16px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .view-btn:hover {
+            background-color: #2980b9;
+        }
+
+        .view-btn.active {
+            background-color: var(--secondary-color);
+        }
+
+        .sort-options {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        select {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+
+        .world-clocks {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .list-view .world-clocks {
+            grid-template-columns: 1fr;
+        }
+
+        .clock-card {
+            background-color: var(--card-background);
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            transition: transform 0.3s, box-shadow 0.3s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .clock-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .country-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: var(--secondary-color);
+        }
+
+        .time-info {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .local-time, .ist-time, .local-date {
+            font-size: 1.1rem;
+        }
+
+        .time-difference {
+            margin-top: 10px;
+            font-weight: 500;
+            color: var(--primary-color);
+        }
+
+        footer {
+            margin-top: 40px;
+            text-align: center;
+            color: #666;
+            padding: 20px;
+            font-size: 0.9rem;
+        }
+
+        .clock-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .list-view .clock-card {
+            padding: 12px 20px;
+        }
+
+        .list-view .time-info {
+            flex-direction: row;
+            justify-content: space-between;
+            flex-grow: 1;
+            margin-left: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .list-view .time-info {
+                flex-direction: column;
+                margin-left: 10px;
+            }
+
+            .list-view .clock-list-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .view-toggle, .sort-options {
+                justify-content: center;
+            }
+        }
+
+        .ist-highlight {
+            background-color: #e8f4ff;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        #current-ist {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.2rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.5rem;
+            color: var(--secondary-color);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>ShakthiSAT - World Clock</h1>
+        <p>Current times and differences from Indian Standard Time (IST)</p>
+    </header>
+
+    <div class="container">
+        <div id="current-ist">
+            Loading current IST...
+        </div>
+
+        <div class="search-container">
+            <input type="text" id="search" placeholder="Search for a country...">
+        </div>
+
+        <div class="controls">
+            <div class="view-toggle">
+                <button class="view-btn active" data-view="grid">Grid View</button>
+                <button class="view-btn" data-view="list">List View</button>
+            </div>
+            <div class="sort-options">
+                <label for="sort">Sort by:</label>
+                <select id="sort">
+                    <option value="name">Country Name</option>
+                    <option value="time-diff-asc">Time Difference (Ascending)</option>
+                    <option value="time-diff-desc">Time Difference (Descending)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="world-clocks">
+            <div class="loading">Loading world clocks...</div>
+        </div>
+    </div>
+
+    <footer>
+        <p>ShakthiSAT - World Clock | Made with ❤️ | &copy; 2025</p>
+    </footer>
+
+    <script>
+        // Country data with timezone information
+        const countries = [
+            { id: 1, name: "Afghanistan", timezone: "Asia/Kabul" },
+            { id: 2, name: "Albania", timezone: "Europe/Tirane" },
+            { id: 3, name: "Angola", timezone: "Africa/Luanda" },
+            { id: 4, name: "Argentina", timezone: "America/Argentina/Buenos_Aires" },
+            { id: 5, name: "Armenia", timezone: "Asia/Yerevan" },
+            { id: 6, name: "Australia", timezone: "Australia/Sydney" },
+            { id: 7, name: "Austria", timezone: "Europe/Vienna" },
+            { id: 8, name: "Bahamas", timezone: "America/Nassau" },
+            { id: 9, name: "Benin", timezone: "Africa/Porto-Novo" },
+            { id: 10, name: "Bolivia", timezone: "America/La_Paz" },
+            { id: 11, name: "Botswana", timezone: "Africa/Gaborone" },
+            { id: 12, name: "Brazil", timezone: "America/Sao_Paulo" },
+            { id: 13, name: "Brunei", timezone: "Asia/Brunei" },
+            { id: 14, name: "Burkina Faso", timezone: "Africa/Ouagadougou" },
+            { id: 15, name: "Cameroon", timezone: "Africa/Douala" },
+            { id: 16, name: "Canada", timezone: "America/Toronto" },
+            { id: 17, name: "Central African Republic", timezone: "Africa/Bangui" },
+            { id: 18, name: "Chile", timezone: "America/Santiago" },
+            { id: 19, name: "Colombia", timezone: "America/Bogota" },
+            { id: 20, name: "Costa Rica", timezone: "America/Costa_Rica" },
+            { id: 21, name: "Cote d'Ivoire (Ivory Coast)", timezone: "Africa/Abidjan" },
+            { id: 22, name: "Czechia", timezone: "Europe/Prague" },
+            { id: 23, name: "Dominica", timezone: "America/Dominica" },
+            { id: 24, name: "Egypt", timezone: "Africa/Cairo" },
+            { id: 25, name: "El Salvador", timezone: "America/El_Salvador" },
+            { id: 26, name: "Equatorial Guinea", timezone: "Africa/Malabo" },
+            { id: 27, name: "Eswatini", timezone: "Africa/Mbabane" },
+            { id: 28, name: "Ethiopia", timezone: "Africa/Addis_Ababa" },
+            { id: 29, name: "Fiji", timezone: "Pacific/Fiji" },
+            { id: 30, name: "France", timezone: "Europe/Paris" },
+            { id: 31, name: "Gabon", timezone: "Africa/Libreville" },
+            { id: 32, name: "Gambia", timezone: "Africa/Banjul" },
+            { id: 33, name: "Ghana", timezone: "Africa/Accra" },
+            { id: 34, name: "Greece", timezone: "Europe/Athens" },
+            { id: 35, name: "Grenada", timezone: "America/Grenada" },
+            { id: 36, name: "Guatemala", timezone: "America/Guatemala" },
+            { id: 37, name: "Haiti", timezone: "America/Port-au-Prince" },
+            { id: 38, name: "Honduras", timezone: "America/Tegucigalpa" },
+            { id: 39, name: "Hungary", timezone: "Europe/Budapest" },
+            { id: 40, name: "India", timezone: "Asia/Kolkata" },
+            { id: 41, name: "Indonesia", timezone: "Asia/Jakarta" },
+            { id: 42, name: "Ireland", timezone: "Europe/Dublin" },
+            { id: 43, name: "Italy", timezone: "Europe/Rome" },
+            { id: 44, name: "Jamaica", timezone: "America/Jamaica" },
+            { id: 45, name: "Japan", timezone: "Asia/Tokyo" },
+            { id: 46, name: "Jordan", timezone: "Asia/Amman" },
+            { id: 47, name: "Kenya", timezone: "Africa/Nairobi" },
+            { id: 48, name: "Kyrgyzstan", timezone: "Asia/Bishkek" },
+            { id: 49, name: "Latvia", timezone: "Europe/Riga" },
+            { id: 50, name: "Lesotho", timezone: "Africa/Maseru" },
+            { id: 51, name: "Liberia", timezone: "Africa/Monrovia" },
+            { id: 52, name: "Luxembourg", timezone: "Europe/Luxembourg" },
+            { id: 53, name: "Macedonia", timezone: "Europe/Skopje" },
+            { id: 54, name: "Madagascar", timezone: "Indian/Antananarivo" },
+            { id: 55, name: "Malawi", timezone: "Africa/Blantyre" },
+            { id: 56, name: "Malaysia", timezone: "Asia/Kuala_Lumpur" },
+            { id: 57, name: "Malta", timezone: "Europe/Malta" },
+            { id: 58, name: "Mexico", timezone: "America/Mexico_City" },
+            { id: 59, name: "Moldova", timezone: "Europe/Chisinau" },
+            { id: 60, name: "Monaco", timezone: "Europe/Monaco" },
+            { id: 61, name: "Mongolia", timezone: "Asia/Ulaanbaatar" },
+            { id: 62, name: "Montenegro", timezone: "Europe/Podgorica" },
+            { id: 63, name: "Morocco", timezone: "Africa/Casablanca" },
+            { id: 64, name: "Mozambique", timezone: "Africa/Maputo" },
+            { id: 65, name: "Myanmar", timezone: "Asia/Yangon" },
+            { id: 66, name: "Namibia", timezone: "Africa/Windhoek" },
+            { id: 67, name: "Nepal", timezone: "Asia/Kathmandu" },
+            { id: 68, name: "Netherlands", timezone: "Europe/Amsterdam" },
+            { id: 69, name: "New Zealand", timezone: "Pacific/Auckland" },
+            { id: 70, name: "Nigeria", timezone: "Africa/Lagos" },
+            { id: 71, name: "Norway", timezone: "Europe/Oslo" },
+            { id: 72, name: "Palau", timezone: "Pacific/Palau" },
+            { id: 73, name: "Panama", timezone: "America/Panama" },
+            { id: 74, name: "Papua New Guinea", timezone: "Pacific/Port_Moresby" },
+            { id: 75, name: "Paraguay", timezone: "America/Asuncion" },
+            { id: 76, name: "Peru", timezone: "America/Lima" },
+            { id: 77, name: "Philippines", timezone: "Asia/Manila" },
+            { id: 78, name: "Poland", timezone: "Europe/Warsaw" },
+            { id: 79, name: "Portugal", timezone: "Europe/Lisbon" },
+            { id: 80, name: "Romania", timezone: "Europe/Bucharest" },
+            { id: 81, name: "Rwanda", timezone: "Africa/Kigali" },
+            { id: 82, name: "Samoa", timezone: "Pacific/Apia" },
+            { id: 83, name: "Senegal", timezone: "Africa/Dakar" },
+            { id: 84, name: "Serbia", timezone: "Europe/Belgrade" },
+            { id: 85, name: "Seychelles", timezone: "Indian/Mahe" },
+            { id: 86, name: "Sierra Leone", timezone: "Africa/Freetown" },
+            { id: 87, name: "Singapore", timezone: "Asia/Singapore" },
+            { id: 88, name: "Slovenia", timezone: "Europe/Ljubljana" },
+            { id: 89, name: "Solomon Islands", timezone: "Pacific/Guadalcanal" },
+            { id: 90, name: "South Africa", timezone: "Africa/Johannesburg" },
+            { id: 91, name: "Spain", timezone: "Europe/Madrid" },
+            { id: 92, name: "Sri Lanka", timezone: "Asia/Colombo" },
+            { id: 93, name: "St Lucia", timezone: "America/St_Lucia" },
+            { id: 94, name: "St Vincent and the Grenadines", timezone: "America/St_Vincent" },
+            { id: 95, name: "St. Kitts and Nevis", timezone: "America/St_Kitts" },
+            { id: 96, name: "Tanzania", timezone: "Africa/Dar_es_Salaam" },
+            { id: 97, name: "Thailand", timezone: "Asia/Bangkok" },
+            { id: 98, name: "Togo", timezone: "Africa/Lome" },
+            { id: 99, name: "Trinidad and Tobago", timezone: "America/Port_of_Spain" },
+            { id: 100, name: "Tunisia", timezone: "Africa/Tunis" },
+            { id: 101, name: "Turkmenistan", timezone: "Asia/Ashgabat" },
+            { id: 102, name: "Uganda", timezone: "Africa/Kampala" },
+            { id: 103, name: "UK", timezone: "Europe/London" },
+            { id: 104, name: "Uruguay", timezone: "America/Montevideo" },
+            { id: 105, name: "USA", timezone: "America/New_York" },
+            { id: 106, name: "Uzbekistan", timezone: "Asia/Tashkent" },
+            { id: 107, name: "Zambia", timezone: "Africa/Lusaka" },
+            { id: 108, name: "Zimbabwe", timezone: "Africa/Harare" }
+        ];
+
+        // DOM elements
+        const worldClocksEl = document.querySelector('.world-clocks');
+        const searchInput = document.getElementById('search');
+        const sortSelect = document.getElementById('sort');
+        const viewButtons = document.querySelectorAll('.view-btn');
+        const currentIstEl = document.getElementById('current-ist');
+
+        // Global variables
+        let currentView = 'grid';
+        let filteredCountries = [...countries];
+        let sortOption = 'name';
+
+        // Format time function
+        function formatTime(date) {
+            return date.toLocaleTimeString([], { 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit',
+                hour12: true
+            });
+        }
+
+        // Format date function
+        function formatDate(date) {
+            return date.toLocaleDateString([], {
+                weekday: 'short',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+
+        // Calculate time difference between two dates in hours and minutes
+        function getTimeDifference(localDate, istDate) {
+            const diffMs = localDate - istDate;
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+            
+            if (diffHours === 0 && diffMinutes === 0) {
+                return "Same time as IST";
+            }
+            
+            const hourText = Math.abs(diffHours) === 1 ? "hour" : "hours";
+            const minuteText = Math.abs(diffMinutes) === 1 ? "minute" : "minutes";
+            
+            if (diffHours === 0) {
+                return `${diffMinutes > 0 ? '+' : ''}${diffMinutes} ${minuteText}`;
+            } else if (diffMinutes === 0) {
+                return `${diffHours > 0 ? '+' : ''}${diffHours} ${hourText}`;
+            } else {
+                return `${diffHours > 0 ? '+' : ''}${diffHours} ${hourText} ${Math.abs(diffMinutes)} ${minuteText}`;
+            }
+        }
+
+        // Get numerical time difference for sorting
+        function getNumericalTimeDiff(localDate, istDate) {
+            return (localDate - istDate) / (1000 * 60); // Return difference in minutes
+        }
+
+        // Update all clocks
+        function updateClocks() {
+            // Get current IST time
+            const istTime = new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+            const istDate = new Date(istTime);
+            
+            // Update IST display
+            currentIstEl.innerHTML = `
+                <strong>Current IST (Indian Standard Time):</strong> ${formatTime(istDate)}
+                <br>
+                <small>${formatDate(istDate)}</small>
+            `;
+            
+            // Sort countries based on selected option
+            sortCountries();
+            
+            // Generate and display clock cards
+            worldClocksEl.innerHTML = '';
+            
+            filteredCountries.forEach(country => {
+                try {
+                    const localTime = new Date().toLocaleString('en-US', { timeZone: country.timezone });
+                    const localDate = new Date(localTime);
+                    
+                    const timeDiff = getTimeDifference(localDate, istDate);
+                    const numericalDiff = getNumericalTimeDiff(localDate, istDate);
+                    
+                    const isIst = country.name === 'India';
+                    
+                    if (currentView === 'grid') {
+                        const clockCard = document.createElement('div');
+                        clockCard.classList.add('clock-card');
+                        if (isIst) clockCard.classList.add('ist-highlight');
+                        
+                        clockCard.innerHTML = `
+                            <div class="country-name">${country.name}</div>
+                            <div class="time-info">
+                                <div class="local-time"><strong>Local Time:</strong> ${formatTime(localDate)}</div>
+                                <div class="local-date"><strong>Date:</strong> ${formatDate(localDate)}</div>
+                                <div class="ist-time"><strong>IST:</strong> ${formatTime(istDate)}</div>
+                                <div class="time-difference"><strong>Difference:</strong> ${timeDiff}</div>
+                            </div>
+                        `;
+                        
+                        clockCard.dataset.diff = numericalDiff;
+                        worldClocksEl.appendChild(clockCard);
+                    } else {
+                        const clockCard = document.createElement('div');
+                        clockCard.classList.add('clock-card');
+                        if (isIst) clockCard.classList.add('ist-highlight');
+                        
+                        clockCard.innerHTML = `
+                            <div class="clock-list-item">
+                                <div class="country-name">${country.name}</div>
+                                <div class="time-info">
+                                    <div class="local-time"><strong>Local:</strong> ${formatTime(localDate)}<br><small>${formatDate(localDate)}</small></div>
+                                    <div class="time-difference"><strong>Diff:</strong> ${timeDiff}</div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        clockCard.dataset.diff = numericalDiff;
+                        worldClocksEl.appendChild(clockCard);
+                    }
+                } catch (error) {
+                    console.error(`Error processing ${country.name}: ${error.message}`);
+                }
+            });
+        }
+
+        // Filter countries based on search input
+        function filterCountries() {
+            const searchTerm = searchInput.value.toLowerCase();
+            
+            if (searchTerm.trim() === '') {
+                filteredCountries = [...countries];
+            } else {
+                filteredCountries = countries.filter(country => 
+                    country.name.toLowerCase().includes(searchTerm) || 
+                    country.id.toString().includes(searchTerm)
+                );
+            }
+            
+            updateClocks();
+        }
+
+        // Sort countries based on selected option
+        function sortCountries() {
+            switch (sortOption) {
+                case 'name':
+                    filteredCountries.sort((a, b) => a.name.localeCompare(b.name));
+                    break;
+                case 'time-diff-asc':
+                    // This is just an initial sort by name, actual time diff sorting happens after clock creation
+                    filteredCountries.sort((a, b) => a.name.localeCompare(b.name));
+                    break;
+                case 'time-diff-desc':
+                    // This is just an initial sort by name, actual time diff sorting happens after clock creation
+                    filteredCountries.sort((a, b) => a.name.localeCompare(b.name));
+                    break;
+                default:
+                    filteredCountries.sort((a, b) => a.name.localeCompare(b.name));
+                    break;
+            }
+        }
+
+        // Switch between grid and list views
+        function switchView(view) {
+            currentView = view;
+            
+            const container = document.querySelector('.container');
+            if (view === 'list') {
+                container.classList.add('list-view');
+            } else {
+                container.classList.remove('list-view');
+            }
+            
+            viewButtons.forEach(btn => {
+                if (btn.dataset.view === view) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            updateClocks();
+        }
+
+        // Initialize the application
+        function init() {
+            // Initial update
+            updateClocks();
+            
+            // Set up timer to update every second
+            setInterval(updateClocks, 1000);
+            
+            // Set up event listeners
+            searchInput.addEventListener('input', filterCountries);
+            
+            sortSelect.addEventListener('change', () => {
+                sortOption = sortSelect.value;
+                updateClocks();
+                
+                // Additional sorting by time difference if needed
+                if (sortOption === 'time-diff-asc' || sortOption === 'time-diff-desc') {
+                    setTimeout(() => {
+                        const cards = Array.from(document.querySelectorAll('.clock-card'));
+                        cards.sort((a, b) => {
+                            const diffA = parseFloat(a.dataset.diff);
+                            const diffB = parseFloat(b.dataset.diff);
+                            return sortOption === 'time-diff-asc' ? diffA - diffB : diffB - diffA;
+                        });
+                        
+                        cards.forEach(card => {
+                            worldClocksEl.appendChild(card);
+                        });
+                    }, 50);
+                }
+            });
+            
+            viewButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    switchView(btn.dataset.view);
+                });
+            });
+        }
+
+        // Start the app when the DOM is loaded
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
